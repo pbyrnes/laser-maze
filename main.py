@@ -1,7 +1,12 @@
+import argparse
+
 from mirror_maze import MirrorMaze
 
 if __name__ == '__main__':
-    mirror_maze = MirrorMaze("maze_sample.txt")
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--file", help="maze definition file", default='maze_sample.txt')
+    args = parser.parse_args()
+    mirror_maze = MirrorMaze(args.file)
     height, width = mirror_maze.get_dimensions()
     print(f'{height=}, {width=}')
     start_x, start_y, start_orientation = mirror_maze.get_start_orientation()
