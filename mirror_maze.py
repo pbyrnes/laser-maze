@@ -72,18 +72,27 @@ class MirrorMaze:
         if self.entry_orientation == 'H':
             if x == 0:
                 direction = 'R'
+                # need to start with x = -1 in order to potentially catch a mirror in the x=0 column
+                # this is probably a design smell and ideally some design change would eliminate the hacky correction
                 x -= 1
             else:
                 direction = 'L'
+                # need to start with x = x+1 in order to potentially catch a mirror in the last column
+                # this is probably a design smell and ideally some design change would eliminate the hacky correction
                 x += 1
         else:
             if y == 0:
                 direction = 'U'
+                # need to start with y = -1 in order to potentially catch a mirror in the y=0 row
+                # this is probably a design smell and ideally some design change would eliminate the hacky correction
                 y -= 1
             else:
                 direction = 'D'
+                # need to start with y = y+1 in order to potentially catch a mirror in the top row
+                # this is probably a design smell and ideally some design change would eliminate the hacky correction
                 y += 1
         orientation = None
+        # previous_steps is looking for a repeated (x, y, direction) tuple which would mean reflections would cycle
         previous_steps = set()
         while orientation is None:
             x, y, direction, orientation = self.get_next_move(x, y, direction)
@@ -135,8 +144,12 @@ class MirrorMaze:
                 self.reflections[direction][key] = RangeDict(value, increasing=direction in ['U', 'R'])
 
     def get_next_move(self, x, y, direction):
+        # Ideally this code would be simplified to not have different cases for different directions (is that possible?)
         idx, loc = (x, y) if direction in ['U', 'D'] else (y, x)
+        # the work of finding the next mirror is mostly being done by RangeDict.find() here
         new_direction = self.reflections[direction][idx].find(loc)
+        # I don't like the 2 different return cases for new_direction, but it works.
+        # Maybe should raise an exception if no next mirror is found instead?
         if new_direction is None:
             if direction == 'U':
                 return x, self.height-1, None, 'V'
