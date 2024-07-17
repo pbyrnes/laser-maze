@@ -1,4 +1,4 @@
-from bisect import bisect, bisect_left
+from bisect import bisect_left, bisect
 from collections import OrderedDict
 
 
@@ -12,13 +12,14 @@ class RangeDict:
         self.values = list(d.values())
 
     def find(self, key):
+        if not self.keys:
+            return None
+        if self.increasing and key >= self.keys[-1]:
+            return None
+        if not self.increasing and key <= self.keys[0]:
+            return None
         if self.increasing:
             idx = bisect(self.keys, key)
         else:
-            idx = bisect_left(self.keys, key)
-        try:
-            ret_key = self.keys[idx]
-            ret_dir = self.values[idx]
-        except IndexError:
-            return None, None
-        return ret_key, ret_dir
+            idx = bisect_left(self.keys, key) - 1
+        return self.keys[idx], self.values[idx]

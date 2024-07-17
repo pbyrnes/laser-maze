@@ -1,4 +1,3 @@
-from bisect import bisect
 from collections import defaultdict
 
 from range_dict import RangeDict
@@ -73,16 +72,24 @@ class MirrorMaze:
         if self.entry_orientation == 'H':
             if x == 0:
                 direction = 'R'
+                x -= 1
             else:
                 direction = 'L'
+                x += 1
         else:
             if y == 0:
                 direction = 'U'
+                y -= 1
             else:
                 direction = 'D'
+                y += 1
         orientation = None
+        previous_steps = set()
         while orientation is None:
             x, y, direction, orientation = self.get_next_move(x, y, direction)
+            if (x, y, direction) in previous_steps:
+                raise RuntimeError(f'Stuck in infinite reflection: {x=}, {y=}, {direction=}')
+            previous_steps.add((x, y, direction))
         return x, y, orientation
 
     @staticmethod
@@ -129,24 +136,18 @@ class MirrorMaze:
 
     def get_next_move(self, x, y, direction):
         idx, loc = (x, y) if direction in ['U', 'D'] else (y, x)
-        reflections = self.reflections[direction][idx]
-        if direction in ['R', 'U']:
-            bisect_idx = bisect(reflections, loc, key=lambda v: v[0])
-        else:
-            bisect_idx = len(reflections) - 1 - bisect(list(reversed(reflections)), -loc, key=lambda v: -v[0])
-        orientation = None
-        try:
-            new_idx, new_direction = reflections[bisect_idx]
-            new_x, new_y = (new_idx, y) if new_direction in ['U', 'D'] else (x, new_idx)
-        except IndexError:
-            orientation = 'V' if direction in ['U', 'D'] else 'H'
-            new_x, new_y, new_direction = x, y, direction
-            if direction == 'D':
-                new_y = 0
-            if direction == 'L':
-                new_x = 0
+        new_direction = self.reflections[direction][idx].find(loc)
+        if new_direction is None:
             if direction == 'U':
-                new_y = self.height-1
-            if direction == 'R':
-                new_x = self.width-1
-        return new_x, new_y, new_direction, orientation
+                return x, self.height-1, None, 'V'
+            elif direction == 'D':
+                return x, 0, None, 'V'
+            elif direction == 'L':
+                return 0, y, None, 'H'
+            else:
+                return self.width-1, y, None, 'H'
+        else:
+            if direction in ['U', 'D']:
+                return idx, new_direction[0], new_direction[1], None
+            else:
+                return new_direction[0], idx, new_direction[1], None
